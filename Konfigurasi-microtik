@@ -1,0 +1,58 @@
+####################################
+# IDENTITAS ROUTER
+####################################
+/system identity set name=ROUTER-SEKOLAH
+
+####################################
+# IP ADDRESS LAN
+####################################
+/ip address add address=192.168.1.1/24 interface=ether2 comment=LAN
+
+####################################
+# DNS
+####################################
+/ip dns set servers=8.8.8.8,1.1.1.1 allow-remote-requests=yes
+
+####################################
+# GATEWAY (ISI SESUAI ISP)
+####################################
+/ip route add gateway=192.168.1.254
+
+####################################
+# NAT INTERNET
+####################################
+/ip firewall nat add chain=srcnat out-interface=ether1 action=masquerade comment=NAT-INTERNET
+
+####################################
+# DHCP SERVER
+####################################
+/ip pool add name=pool-lan ranges=192.168.1.10-192.168.1.100
+/ip dhcp-server add name=dhcp-lan interface=ether2 address-pool=pool-lan disabled=no
+/ip dhcp-server network add address=192.168.1.0/24 gateway=192.168.1.1 dns-server=8.8.8.8
+
+####################################
+# FIREWALL DASAR
+####################################
+/ip firewall filter
+add chain=input connection-state=established,related action=accept comment=ALLOW-ESTABLISHED
+add chain=input protocol=icmp action=accept comment=ALLOW-PING
+add chain=input in-interface=ether1 action=drop comment=DROP-WAN
+
+####################################
+# LIMIT BANDWIDTH
+####################################
+/queue simple add name=LIMIT-USER target=192.168.1.10 max-limit=2M/2M
+
+####################################
+# BLOKIR WEBSITE (FACEBOOK)
+####################################
+/ip firewall layer7-protocol add name=blockfb regexp="^.+(facebook.com).*$"
+/ip firewall filter add chain=forward layer7-protocol=blockfb action=drop comment=BLOCK-FACEBOOK
+
+####################################
+# SCRIPT AUTO REBOOT (OPTIONAL)
+####################################
+/system script add name=auto-reboot source={
+/system reboot
+}
+####################################
