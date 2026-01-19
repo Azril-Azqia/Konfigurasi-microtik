@@ -1,0 +1,67 @@
+################################
+# MASUK ROOT
+################################
+su -
+
+################################
+# UPDATE SISTEM
+################################
+apt update && apt upgrade -y
+
+################################
+# SET HOSTNAME
+################################
+hostnamectl set-hostname debian-server
+
+################################
+# KONFIGURASI IP STATIS
+################################
+cat > /etc/network/interfaces <<EOF
+auto lo
+iface lo inet loopback
+
+auto enp0s3
+iface enp0s3 inet static
+ address 192.168.1.10
+ netmask 255.255.255.0
+ gateway 192.168.1.1
+EOF
+
+################################
+# DNS
+################################
+echo "nameserver 8.8.8.8" > /etc/resolv.conf
+echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+
+################################
+# RESTART NETWORK
+################################
+systemctl restart networking
+
+################################
+# INSTALL SSH SERVER
+################################
+apt install openssh-server -y
+systemctl enable ssh
+systemctl start ssh
+
+################################
+# INSTALL WEB SERVER (APACHE)
+################################
+apt install apache2 -y
+systemctl enable apache2
+systemctl start apache2
+
+################################
+# FIREWALL DASAR
+################################
+apt install ufw -y
+ufw allow ssh
+ufw allow 80
+ufw allow 443
+ufw --force enable
+
+################################
+# SELESAI
+################################
+echo "KONFIGURASI DEBIAN SELESAI"
